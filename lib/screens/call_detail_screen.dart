@@ -163,182 +163,199 @@ class _CallDetailScreenState extends State<CallDetailScreen> {
     final call = widget.call;
     final typeLabel = '${call.type[0].toUpperCase()}${call.type.substring(1)} call';
     final recording = _recordings.recordingFor(call);
+
     return Scaffold(
-      backgroundColor: AppColors.bg,
+      backgroundColor: AppColors.canvas,
+      appBar: AppBar(
+        title: const Text('Call details'),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_rounded),
+          onPressed: () => Navigator.of(context).pop(),
+        ),
+      ),
       body: SafeArea(
-        child: Column(
+        child: ListView(
+          padding: const EdgeInsets.fromLTRB(kGutter, 4, kGutter, 28),
           children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(20, 10, 20, 0),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            // Contact hero
+            Column(
+              children: [
+                Avatar(initials: call.initials, size: 78, fontSize: 26),
+                const SizedBox(height: 12),
+                Text(
+                  call.name,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(fontSize: 21, fontWeight: FontWeight.w700, color: AppColors.ink, letterSpacing: -0.4),
+                ),
+                if (call.number.isNotEmpty && call.number != call.name) ...[
+                  const SizedBox(height: 3),
+                  Text(call.number, style: AppText.mono(13.5, color: AppColors.inkSoft)),
+                ],
+                const SizedBox(height: 10),
+                StatusPill(label: typeLabel, color: callTypeColor(call.type)),
+              ],
+            ),
+            const SizedBox(height: 20),
+            if (call.number.isNotEmpty) ...[
+              Row(
                 children: [
-                  NeuCircleIcon(icon: Icons.arrow_back_ios_new_rounded, color: AppColors.inkSoft, size: 38, iconSize: 15, onTap: () => Navigator.of(context).pop()),
-                  const NeuCircleIcon(icon: Icons.more_horiz_rounded, color: AppColors.inkSoft, size: 38),
+                  Expanded(
+                    child: NeuPrimaryButton(
+                      label: 'Call back',
+                      icon: Icons.call_rounded,
+                      color: AppColors.greenInk,
+                      onPressed: _dial,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: NeuSecondaryButton(
+                      label: 'WhatsApp',
+                      icon: Icons.chat_rounded,
+                      color: AppColors.greenInk,
+                      onPressed: _whatsApp,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 20),
+            ],
+            IntrinsicHeight(
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Expanded(child: _MetaTile(label: 'DATE', value: call.day)),
+                  const SizedBox(width: 10),
+                  Expanded(child: _MetaTile(label: 'TIME', value: call.time)),
+                  const SizedBox(width: 10),
+                  Expanded(child: _MetaTile(label: 'DURATION', value: call.duration)),
                 ],
               ),
             ),
-            Expanded(
-              child: ListView(
-                padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
-                children: [
-                  Column(
-                    children: [
-                      Avatar(initials: call.initials, size: 76, fontSize: 24),
-                      const SizedBox(height: 10),
-                      Text(call.name, style: const TextStyle(fontSize: 19, fontWeight: FontWeight.w800, color: AppColors.ink)),
-                      if (call.number.isNotEmpty && call.number != call.name) ...[
-                        const SizedBox(height: 2),
-                        Text(call.number, style: AppText.mono(13, color: AppColors.inkSoft)),
-                      ],
-                      const SizedBox(height: 10),
-                      StatusPill(label: typeLabel, color: callTypeColor(call.type)),
-                    ],
-                  ),
-                  const SizedBox(height: 20),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: NeuCard(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              const Text('DATE & TIME', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, letterSpacing: 0.6, color: AppColors.inkFaint)),
-                              const SizedBox(height: 6),
-                              Text('${call.day}, ${call.time}', style: AppText.mono(15, weight: FontWeight.w700)),
-                            ],
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 14),
-                      Expanded(
-                        child: NeuCard(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              const Text('DURATION', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, letterSpacing: 0.6, color: AppColors.inkFaint)),
-                              const SizedBox(height: 6),
-                              Text(call.duration, style: AppText.mono(15, weight: FontWeight.w700)),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 18),
-                  if (call.timestamp != 0) ...[
-                    const Text('LEAD STATUS', style: AppText.sectionLabel),
-                    const SizedBox(height: 10),
-                    _LeadStatusChips(
-                      selected: _notes.statusFor(call.timestamp),
-                      onSelect: _savingNote ? null : _setStatus,
-                    ),
-                    const SizedBox(height: 18),
-                    Builder(
-                      builder: (context) {
-                        final when = _reminders.reminderFor(call.timestamp);
-                        return NeuCard(
-                          onTap: _setReminder,
-                          child: Row(
-                            children: [
-                              Icon(when != null ? Icons.alarm_on_rounded : Icons.alarm_add_rounded, size: 20, color: AppColors.amberInk),
-                              const SizedBox(width: 12),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(when != null ? 'Callback reminder' : 'Set callback reminder', style: AppText.cardTitle),
-                                    const SizedBox(height: 2),
-                                    Text(
-                                      when != null ? reminderLabel(when) : 'Get a nudge to call this lead back',
-                                      style: AppText.caption,
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              Icon(when != null ? Icons.edit_rounded : Icons.add_rounded, size: 16, color: AppColors.amberInk),
-                            ],
-                          ),
-                        );
-                      },
-                    ),
-                    const SizedBox(height: 18),
-                  ],
-                  if (recording != null) ...[
-                    const Text('RECORDING', style: AppText.sectionLabel),
-                    const SizedBox(height: 10),
-                    NeuCard(
-                      child: AudioPlayerRow(path: recording.path, durationHint: call.durationSeconds > 0 ? formatSeconds(call.durationSeconds) : null),
-                    ),
-                    const SizedBox(height: 18),
-                  ],
-                  Builder(
-                    builder: (context) {
-                      final note = _notes.noteFor(call.timestamp);
-                      final hasNote = (note ?? '').isNotEmpty;
-                      return NeuCard(
-                        onTap: call.timestamp == 0 ? null : _editNote,
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                const Text('NOTES', style: AppText.sectionLabel),
-                                if (_savingNote)
-                                  const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.blue))
-                                else
-                                  Icon(hasNote ? Icons.edit_rounded : Icons.add_rounded, size: 16, color: AppColors.blueInk),
-                              ],
-                            ),
-                            const SizedBox(height: 8),
-                            Text(
-                              hasNote ? note! : 'Tap to add a note for this call.',
-                              style: hasNote ? AppText.body : AppText.caption,
-                            ),
-                          ],
-                        ),
-                      );
-                    },
-                  ),
-                  const SizedBox(height: 18),
-                  if (call.number.isNotEmpty)
-                    Row(
-                      children: [
-                        Expanded(
-                          child: NeuCard(
-                            onTap: _dial,
-                            child: const Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Icon(Icons.call_rounded, size: 20, color: AppColors.greenInk),
-                                SizedBox(width: 10),
-                                Text('Call Back', style: TextStyle(fontSize: 13.5, fontWeight: FontWeight.w700, color: AppColors.ink)),
-                              ],
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 14),
-                        Expanded(
-                          child: NeuCard(
-                            onTap: _whatsApp,
-                            child: const Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Icon(Icons.chat_rounded, size: 20, color: AppColors.greenInk),
-                                SizedBox(width: 10),
-                                Text('WhatsApp', style: TextStyle(fontSize: 13.5, fontWeight: FontWeight.w700, color: AppColors.ink)),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                ],
+            const SizedBox(height: 20),
+            if (call.timestamp != 0) ...[
+              const SectionLabel(label: 'Lead status'),
+              NeuCard(
+                padding: const EdgeInsets.all(14),
+                child: _LeadStatusChips(
+                  selected: _notes.statusFor(call.timestamp),
+                  onSelect: _savingNote ? null : _setStatus,
+                ),
               ),
+              const SizedBox(height: 20),
+              Builder(
+                builder: (context) {
+                  final when = _reminders.reminderFor(call.timestamp);
+                  return NeuCard(
+                    padding: const EdgeInsets.all(14),
+                    onTap: _setReminder,
+                    child: Row(
+                      children: [
+                        IconTile(
+                          icon: when != null ? Icons.alarm_on_rounded : Icons.alarm_add_rounded,
+                          color: AppColors.amberInk,
+                          size: 40,
+                        ),
+                        const SizedBox(width: 13),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(when != null ? 'Callback reminder' : 'Set callback reminder', style: AppText.cardTitle),
+                              const SizedBox(height: 2),
+                              Text(
+                                when != null ? reminderLabel(when) : 'Get a nudge to call this lead back',
+                                style: AppText.caption,
+                              ),
+                            ],
+                          ),
+                        ),
+                        Icon(when != null ? Icons.edit_rounded : Icons.add_rounded, size: 18, color: AppColors.amberInk),
+                      ],
+                    ),
+                  );
+                },
+              ),
+              const SizedBox(height: 20),
+            ],
+            if (recording != null) ...[
+              const SectionLabel(label: 'Recording'),
+              NeuCard(
+                padding: const EdgeInsets.all(14),
+                child: AudioPlayerRow(
+                  path: recording.path,
+                  durationHint: call.durationSeconds > 0 ? formatSeconds(call.durationSeconds) : null,
+                ),
+              ),
+              const SizedBox(height: 20),
+            ],
+            Builder(
+              builder: (context) {
+                final note = _notes.noteFor(call.timestamp);
+                final hasNote = (note ?? '').isNotEmpty;
+                return NeuCard(
+                  padding: const EdgeInsets.all(16),
+                  onTap: call.timestamp == 0 ? null : _editNote,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          const Text('NOTES', style: AppText.sectionLabel),
+                          if (_savingNote)
+                            const SizedBox(width: 15, height: 15, child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.blue))
+                          else
+                            Row(
+                              children: [
+                                Icon(hasNote ? Icons.edit_rounded : Icons.add_rounded, size: 15, color: AppColors.blue),
+                                const SizedBox(width: 4),
+                                Text(hasNote ? 'Edit' : 'Add', style: AppText.link),
+                              ],
+                            ),
+                        ],
+                      ),
+                      const SizedBox(height: 10),
+                      Text(
+                        hasNote ? note! : 'Tap to add a note for this call.',
+                        style: hasNote
+                            ? const TextStyle(fontSize: 14, height: 1.5, color: AppColors.ink)
+                            : AppText.caption,
+                      ),
+                    ],
+                  ),
+                );
+              },
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+class _MetaTile extends StatelessWidget {
+  const _MetaTile({required this.label, required this.value});
+
+  final String label;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) {
+    return NeuCard(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 13),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Text(label, style: const TextStyle(fontSize: 10.5, fontWeight: FontWeight.w700, letterSpacing: 0.8, color: AppColors.inkFaint)),
+          const SizedBox(height: 6),
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: Alignment.centerLeft,
+            child: Text(value, maxLines: 1, style: AppText.mono(15, weight: FontWeight.w600)),
+          ),
+        ],
       ),
     );
   }
@@ -443,43 +460,56 @@ class _AudioPlayerRowState extends State<AudioPlayerRow> {
         : (_playing || _position > Duration.zero) ? _format(_position) : _format(duration);
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-      decoration: neuPressed(radius: 16),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 9),
+      decoration: BoxDecoration(
+        color: AppColors.surfaceSoft,
+        borderRadius: BorderRadius.circular(14),
+      ),
       child: Row(
         children: [
-          Container(
-            width: 36,
-            height: 36,
-            alignment: Alignment.center,
-            decoration: neuRaisedSm(radius: 18),
-            child: _loading
-                ? const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.blue))
-                : IconButton(
-                    padding: EdgeInsets.zero,
-                    iconSize: 15,
-                    onPressed: _failed ? null : _toggle,
-                    icon: Icon(
-                      _failed ? Icons.error_outline_rounded : (_playing ? Icons.pause_rounded : Icons.play_arrow_rounded),
-                      color: _failed ? AppColors.inkFaint : AppColors.blueInk,
-                    ),
-                  ),
+          Material(
+            color: _failed ? AppColors.surfaceSunken : AppColors.blue,
+            shape: const CircleBorder(),
+            child: InkWell(
+              customBorder: const CircleBorder(),
+              onTap: _failed ? null : _toggle,
+              child: SizedBox(
+                width: 38,
+                height: 38,
+                child: Center(
+                  child: _loading
+                      ? const SizedBox(
+                          width: 16,
+                          height: 16,
+                          child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                        )
+                      : Icon(
+                          _failed
+                              ? Icons.error_outline_rounded
+                              : (_playing ? Icons.pause_rounded : Icons.play_arrow_rounded),
+                          size: 20,
+                          color: _failed ? AppColors.inkFaint : Colors.white,
+                        ),
+                ),
+              ),
+            ),
           ),
           const SizedBox(width: 12),
           Expanded(
             child: _failed
-                ? const Text("Can't play this file", style: AppText.caption)
+                ? const Text('Cannot play this file', style: AppText.caption)
                 : LayoutBuilder(
                     builder: (context, constraints) => GestureDetector(
                       behavior: HitTestBehavior.opaque,
                       onTapDown: (d) => _seekTo(d.localPosition.dx / constraints.maxWidth),
                       child: Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 10),
+                        padding: const EdgeInsets.symmetric(vertical: 11),
                         child: ClipRRect(
                           borderRadius: BorderRadius.circular(99),
                           child: LinearProgressIndicator(
                             value: progress,
                             minHeight: 6,
-                            backgroundColor: AppColors.shDark.withAlpha(140),
+                            backgroundColor: AppColors.lineStrong,
                             valueColor: const AlwaysStoppedAnimation(AppColors.blue),
                           ),
                         ),
@@ -489,8 +519,8 @@ class _AudioPlayerRowState extends State<AudioPlayerRow> {
           ),
           const SizedBox(width: 10),
           SizedBox(
-            width: 40,
-            child: Text(label, textAlign: TextAlign.right, style: AppText.mono(11, color: AppColors.inkFaint)),
+            width: 42,
+            child: Text(label, textAlign: TextAlign.right, style: AppText.mono(12, color: AppColors.inkSoft)),
           ),
         ],
       ),
@@ -513,22 +543,27 @@ class _NoteSheet extends StatelessWidget {
     return Padding(
       padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
       child: Container(
-        padding: const EdgeInsets.fromLTRB(20, 20, 20, 28),
+        padding: const EdgeInsets.fromLTRB(20, 14, 20, 24),
         decoration: const BoxDecoration(
-          color: AppColors.bg,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(kRadiusCard)),
+          color: AppColors.surface,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            const Text('Call note', style: AppText.screenTitle),
-            const SizedBox(height: 6),
+            const SheetGrabber(),
+            const Text('Call note', style: AppText.h1),
+            const SizedBox(height: 5),
             const Text('Saved to your account — visible on any device and in the admin panel.', style: AppText.caption),
             const SizedBox(height: 16),
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
-              decoration: neuPressed(),
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+              decoration: BoxDecoration(
+                color: AppColors.surface,
+                borderRadius: BorderRadius.circular(kRadiusInput),
+                border: Border.all(color: AppColors.lineStrong),
+              ),
               child: TextField(
                 controller: controller,
                 autofocus: true,
@@ -536,15 +571,16 @@ class _NoteSheet extends StatelessWidget {
                 maxLines: 6,
                 maxLength: 2000,
                 textCapitalization: TextCapitalization.sentences,
-                style: const TextStyle(fontSize: 14, color: AppColors.ink),
+                style: const TextStyle(fontSize: 14.5, height: 1.45, color: AppColors.ink),
                 decoration: const InputDecoration(
                   border: InputBorder.none,
+                  counterStyle: TextStyle(fontSize: 11, color: AppColors.inkFaint),
                   hintText: 'e.g. Wants 2BHK, budget 50L. Call back tomorrow 11 AM.',
                   hintStyle: TextStyle(color: AppColors.inkFaint),
                 ),
               ),
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 6),
             NeuPrimaryButton(label: 'Save note', onPressed: () => Navigator.of(context).pop(true)),
           ],
         ),
@@ -587,19 +623,21 @@ class _LeadStatusChips extends StatelessWidget {
       children: _options.map((s) {
         final active = s == selected;
         final color = leadStatusColor(s);
-        return GestureDetector(
-          onTap: onSelect == null ? null : () => onSelect!(s),
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
-            decoration: active
-                ? BoxDecoration(color: color, borderRadius: BorderRadius.circular(kRadiusPill))
-                : neuRaisedSm(radius: kRadiusPill),
-            child: Text(
-              leadStatusLabel(s),
-              style: TextStyle(
-                fontSize: 12.5,
-                fontWeight: FontWeight.w700,
-                color: active ? Colors.white : color,
+        return Material(
+          color: active ? color : AppColors.softFor(color),
+          borderRadius: BorderRadius.circular(kRadiusPill),
+          child: InkWell(
+            borderRadius: BorderRadius.circular(kRadiusPill),
+            onTap: onSelect == null ? null : () => onSelect!(s),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
+              child: Text(
+                leadStatusLabel(s),
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: active ? Colors.white : color,
+                ),
               ),
             ),
           ),
@@ -648,36 +686,67 @@ class _ReminderSheet extends StatelessWidget {
     ];
 
     return Container(
-      padding: const EdgeInsets.fromLTRB(20, 20, 20, 28),
+      padding: const EdgeInsets.fromLTRB(20, 14, 20, 24),
       decoration: const BoxDecoration(
-        color: AppColors.bg,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(kRadiusCard)),
+        color: AppColors.surface,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          const Text('Remind me to call back', style: AppText.screenTitle),
+          const SheetGrabber(),
+          const Text('Remind me to call back', style: AppText.h1),
           const SizedBox(height: 16),
-          ...options.map((o) => _row(o.$1, o.$2, () => onPick(o.$3))),
-          _row('Pick date & time', Icons.event_rounded, () => onPick(_customMarker)),
-          if (hasExisting) _row('Remove reminder', Icons.delete_outline_rounded, () => onPick(DateTime.fromMillisecondsSinceEpoch(0)), danger: true),
+          Container(
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(kRadiusCard),
+              border: Border.all(color: AppColors.line),
+            ),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(kRadiusCard),
+              child: Column(
+                children: [
+                  for (final o in options) ...[
+                    if (o != options.first) const Divider(height: 1),
+                    _row(o.$1, o.$2, () => onPick(o.$3)),
+                  ],
+                  const Divider(height: 1),
+                  _row('Pick date & time', Icons.event_rounded, () => onPick(_customMarker)),
+                  if (hasExisting) ...[
+                    const Divider(height: 1),
+                    _row('Remove reminder', Icons.delete_outline_rounded, () => onPick(DateTime.fromMillisecondsSinceEpoch(0)), danger: true),
+                  ],
+                ],
+              ),
+            ),
+          ),
         ],
       ),
     );
   }
 
   Widget _row(String label, IconData icon, VoidCallback onTap, {bool danger = false}) {
-    final color = danger ? AppColors.redInk : AppColors.ink;
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 10),
-      child: NeuCard(
-        onTap: onTap,
+    final color = danger ? AppColors.redInk : AppColors.amberInk;
+    return InkWell(
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
         child: Row(
           children: [
-            Icon(icon, size: 19, color: danger ? AppColors.redInk : AppColors.amberInk),
-            const SizedBox(width: 14),
-            Text(label, style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: color)),
+            IconTile(icon: icon, color: color, size: 34, iconSize: 17, radius: 10),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                label,
+                style: TextStyle(
+                  fontSize: 14.5,
+                  fontWeight: FontWeight.w500,
+                  color: danger ? AppColors.redInk : AppColors.ink,
+                ),
+              ),
+            ),
+            const Icon(Icons.chevron_right_rounded, size: 20, color: AppColors.inkFaint),
           ],
         ),
       ),

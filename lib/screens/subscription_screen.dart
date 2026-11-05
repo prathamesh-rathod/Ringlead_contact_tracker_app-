@@ -60,38 +60,21 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.bg,
-      body: SafeArea(
-        child: Column(
-          children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(20, 10, 20, 0),
-              child: Row(
-                children: [
-                  NeuCircleIcon(
-                    icon: Icons.arrow_back_ios_new_rounded,
-                    color: AppColors.inkSoft,
-                    size: 38,
-                    iconSize: 15,
-                    onTap: () => Navigator.of(context).pop(),
-                  ),
-                  const Expanded(
-                    child: Text('Subscription', textAlign: TextAlign.center, style: TextStyle(fontSize: 17, fontWeight: FontWeight.w800, color: AppColors.ink)),
-                  ),
-                  const SizedBox(width: 38),
-                ],
-              ),
-            ),
-            Expanded(child: _buildBody()),
-          ],
+      backgroundColor: AppColors.canvas,
+      appBar: AppBar(
+        title: const Text('Subscription'),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_rounded),
+          onPressed: () => Navigator.of(context).pop(),
         ),
       ),
+      body: SafeArea(child: _buildBody()),
     );
   }
 
   Widget _buildBody() {
     if (_loading) {
-      return const Center(child: CircularProgressIndicator(color: AppColors.blue));
+      return const Center(child: CircularProgressIndicator(color: AppColors.blue, strokeWidth: 2.6));
     }
 
     if (_error != null) {
@@ -101,8 +84,10 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Text(_error!, textAlign: TextAlign.center, style: const TextStyle(color: AppColors.redInk)),
+              const IconTile(icon: Icons.cloud_off_rounded, color: AppColors.redInk, size: 52, iconSize: 24, radius: 26),
               const SizedBox(height: 14),
+              Text(_error!, textAlign: TextAlign.center, style: AppText.caption),
+              const SizedBox(height: 18),
               NeuPrimaryButton(label: 'Retry', onPressed: _load),
             ],
           ),
@@ -113,19 +98,20 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
     final isPro = _subscription?.isPro ?? false;
 
     return ListView(
-      padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
+      padding: const EdgeInsets.fromLTRB(kGutter, 6, kGutter, 28),
       children: [
         const Text(
           'Choose the plan that fits how many leads you close.',
           textAlign: TextAlign.center,
           style: AppText.caption,
         ),
-        const SizedBox(height: 18),
+        const SizedBox(height: 20),
         _PlanCard(
           name: 'Free',
           price: '₹0',
+          tagline: 'For getting started',
           features: const [
-            _Feature('Up to 50 calls / month', true),
+            _Feature('Up to 50 calls per month', true),
             _Feature('Manual call logging', true),
             _Feature('Basic lead cards', true),
             _Feature('Automatic call recording', false),
@@ -140,6 +126,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
         _PlanCard(
           name: 'Pro',
           price: '₹499',
+          tagline: 'For busy sales teams',
           features: const [
             _Feature('Unlimited calls', true),
             _Feature('Automatic call recording', true),
@@ -151,6 +138,12 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
           highlighted: true,
           busy: _changingPlan,
           onSelect: () => _switchPlan('pro'),
+        ),
+        const SizedBox(height: 18),
+        const Text(
+          'Plans renew monthly. Cancel any time.',
+          textAlign: TextAlign.center,
+          style: AppText.tiny,
         ),
       ],
     );
@@ -167,6 +160,7 @@ class _PlanCard extends StatelessWidget {
   const _PlanCard({
     required this.name,
     required this.price,
+    required this.tagline,
     required this.features,
     required this.isCurrent,
     required this.highlighted,
@@ -176,6 +170,7 @@ class _PlanCard extends StatelessWidget {
 
   final String name;
   final String price;
+  final String tagline;
   final List<_Feature> features;
   final bool isCurrent;
   final bool highlighted;
@@ -184,75 +179,83 @@ class _PlanCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final card = NeuCard(
+    return NeuCard(
+      padding: const EdgeInsets.all(18),
+      borderColor: highlighted ? AppColors.blue : null,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Row(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(name, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: AppColors.ink)),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Text(
+                          name,
+                          style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w700, color: AppColors.ink),
+                        ),
+                        const SizedBox(width: 8),
+                        if (isCurrent) const StatusPill(dense: true, label: 'CURRENT', color: AppColors.greenInk),
+                        if (!isCurrent && highlighted) const StatusPill(dense: true, label: 'POPULAR', color: AppColors.blueInk),
+                      ],
+                    ),
+                    const SizedBox(height: 3),
+                    Text(tagline, style: AppText.tiny),
+                  ],
+                ),
+              ),
               Text.rich(
                 TextSpan(
                   text: price,
-                  style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w800, color: AppColors.ink),
-                  children: const [TextSpan(text: '/month', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: AppColors.inkFaint))],
+                  style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w700, color: AppColors.ink, letterSpacing: -0.6),
+                  children: const [
+                    TextSpan(
+                      text: '/mo',
+                      style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500, color: AppColors.inkFaint),
+                    ),
+                  ],
                 ),
               ),
             ],
           ),
+          const SizedBox(height: 16),
+          const Divider(height: 1),
           const SizedBox(height: 14),
           for (final f in features) _FeatureLine(text: f.text, included: f.included),
-          const SizedBox(height: 14),
+          const SizedBox(height: 16),
           if (isCurrent)
             Container(
-              padding: const EdgeInsets.symmetric(vertical: 12),
+              padding: const EdgeInsets.symmetric(vertical: 13),
               alignment: Alignment.center,
-              child: const Text('Current Plan', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: AppColors.inkFaint)),
-            )
-          else
-            GestureDetector(
-              onTap: busy ? null : onSelect,
-              child: Container(
-                padding: const EdgeInsets.symmetric(vertical: 12),
-                alignment: Alignment.center,
-                decoration: neuRaisedSm(radius: 14),
-                child: busy
-                    ? const SizedBox(height: 15, width: 15, child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.blueInk))
-                    : Text(name == 'Pro' ? 'Upgrade' : 'Downgrade', style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: AppColors.blueInk)),
+              decoration: BoxDecoration(
+                color: AppColors.surfaceSoft,
+                borderRadius: BorderRadius.circular(kRadiusInput),
               ),
-            ),
+              child: const Text(
+                'Your current plan',
+                style: TextStyle(fontSize: 13.5, fontWeight: FontWeight.w600, color: AppColors.inkSoft),
+              ),
+            )
+          else if (busy)
+            Container(
+              padding: const EdgeInsets.symmetric(vertical: 13),
+              alignment: Alignment.center,
+              child: const SizedBox(
+                height: 20,
+                width: 20,
+                child: CircularProgressIndicator(strokeWidth: 2.2, color: AppColors.blue),
+              ),
+            )
+          else if (name == 'Pro')
+            NeuPrimaryButton(label: 'Upgrade to Pro', icon: Icons.workspace_premium_rounded, onPressed: onSelect)
+          else
+            NeuSecondaryButton(label: 'Switch to Free', color: AppColors.inkSoft, onPressed: onSelect),
         ],
       ),
-    );
-
-    if (!highlighted) return card;
-
-    return Stack(
-      clipBehavior: Clip.none,
-      children: [
-        Container(
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(kRadiusCard),
-            border: Border.all(color: AppColors.blue.withAlpha(115), width: 2),
-          ),
-          child: card,
-        ),
-        if (isCurrent)
-          Positioned(
-            top: -10,
-            right: 16,
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-              decoration: BoxDecoration(color: AppColors.blue, borderRadius: BorderRadius.circular(kRadiusPill)),
-              child: const Text(
-                'CURRENT PLAN',
-                style: TextStyle(fontSize: 9.5, fontWeight: FontWeight.w800, color: Colors.white, letterSpacing: 0.4),
-              ),
-            ),
-          ),
-      ],
     );
   }
 }
@@ -267,15 +270,28 @@ class _FeatureLine extends StatelessWidget {
   Widget build(BuildContext context) {
     final color = included ? AppColors.greenInk : AppColors.inkFaint;
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4.5),
+      padding: const EdgeInsets.only(bottom: 10),
       child: Row(
         children: [
-          Icon(included ? Icons.check_rounded : Icons.close_rounded, size: 16, color: color),
-          const SizedBox(width: 9),
+          Container(
+            width: 20,
+            height: 20,
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              color: included ? AppColors.greenSoft : AppColors.surfaceSoft,
+              shape: BoxShape.circle,
+            ),
+            child: Icon(included ? Icons.check_rounded : Icons.close_rounded, size: 13, color: color),
+          ),
+          const SizedBox(width: 10),
           Expanded(
             child: Text(
               text,
-              style: TextStyle(fontSize: 12.5, color: included ? AppColors.ink : AppColors.inkFaint),
+              style: TextStyle(
+                fontSize: 13.5,
+                fontWeight: FontWeight.w500,
+                color: included ? AppColors.ink : AppColors.inkFaint,
+              ),
             ),
           ),
         ],

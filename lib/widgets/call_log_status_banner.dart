@@ -19,7 +19,7 @@ class CallLogStatusBanner extends StatelessWidget {
     late final String title;
     late final String body;
     bool showRetry = true;
-    String retryLabel = 'Grant Access';
+    String retryLabel = 'Grant access';
 
     switch (status) {
       case CallLogStatus.permissionDenied:
@@ -28,7 +28,7 @@ class CallLogStatusBanner extends StatelessWidget {
         title = 'Call log access needed';
         body = 'Ringlead reads your call history to log calls automatically. Grant access to continue.';
       case CallLogStatus.unsupported:
-        icon = Icons.info_outline_rounded;
+        icon = Icons.phone_android_rounded;
         color = AppColors.inkSoft;
         title = 'Not available on this device';
         body = 'Automatic call logging only works on Android — the OS blocks this on iOS entirely.';
@@ -36,7 +36,7 @@ class CallLogStatusBanner extends StatelessWidget {
       case CallLogStatus.error:
         icon = Icons.error_outline_rounded;
         color = AppColors.redInk;
-        title = "Couldn't load calls";
+        title = 'Could not load calls';
         body = errorMessage ?? 'Something went wrong while reading the call log.';
         retryLabel = 'Retry';
       default:
@@ -47,24 +47,18 @@ class CallLogStatusBanner extends StatelessWidget {
     }
 
     return NeuCard(
+      padding: const EdgeInsets.fromLTRB(18, 24, 18, 18),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          Container(
-            width: 44,
-            height: 44,
-            alignment: Alignment.center,
-            decoration: neuRaisedSm(radius: 22),
-            child: Icon(icon, size: 20, color: color),
-          ),
-          const SizedBox(height: 12),
-          Text(title, style: const TextStyle(fontSize: 14.5, fontWeight: FontWeight.w700, color: AppColors.ink)),
+          IconTile(icon: icon, color: color, size: 54, iconSize: 25, radius: 27),
+          const SizedBox(height: 14),
+          Text(title, textAlign: TextAlign.center, style: AppText.cardTitle),
           if (body.isNotEmpty) ...[
-            const SizedBox(height: 4),
+            const SizedBox(height: 6),
             Text(body, textAlign: TextAlign.center, style: AppText.caption),
           ],
           if (showRetry) ...[
-            const SizedBox(height: 14),
+            const SizedBox(height: 18),
             SizedBox(
               width: double.infinity,
               child: NeuPrimaryButton(label: retryLabel, onPressed: onRetry),

@@ -5,8 +5,8 @@ import '../services/notes_repository.dart';
 import '../services/recording_repository.dart';
 import '../theme.dart';
 import '../widgets/call_log_status_banner.dart';
+import '../widgets/call_tile.dart';
 import '../widgets/neu.dart';
-import 'call_detail_screen.dart';
 
 class CallsScreen extends StatefulWidget {
   const CallsScreen({super.key});
@@ -66,27 +66,31 @@ class CallsScreenState extends State<CallsScreen> {
 
     return RefreshIndicator(
       onRefresh: _repo.refresh,
+      color: AppColors.blue,
+      backgroundColor: AppColors.surface,
       child: ListView(
-        padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
+        padding: const EdgeInsets.fromLTRB(kGutter, 14, kGutter, 28),
         children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              const Text('Calls', style: AppText.screenTitle),
-              if (_repo.lastSyncedLabel != null)
-                Text(_repo.lastSyncedLabel!, style: AppText.tiny),
-            ],
+          ScreenHeader(
+            title: 'Calls',
+            subtitle: _repo.lastSyncedLabel ?? 'Your phone call history',
+            trailing: NeuCircleIcon(
+              icon: Icons.refresh_rounded,
+              color: AppColors.ink,
+              size: 42,
+              iconSize: 20,
+              onTap: _repo.refresh,
+            ),
           ),
           const SizedBox(height: 16),
-          SearchField(hint: 'Search name or number…', onChanged: (v) => setState(() => _query = v)),
-          const SizedBox(height: 14),
+          SearchField(hint: 'Search name or number', onChanged: (v) => setState(() => _query = v)),
+          const SizedBox(height: 12),
           SegmentedTabs(labels: _filterLabels, selected: _filter, onSelect: (i) => setState(() => _filter = i)),
-          const SizedBox(height: 16),
+          const SizedBox(height: 18),
           if (_repo.status == CallLogStatus.loading && allCalls.isEmpty)
             const Padding(
-              padding: EdgeInsets.symmetric(vertical: 40),
-              child: Center(child: CircularProgressIndicator(color: AppColors.blue)),
+              padding: EdgeInsets.symmetric(vertical: 50),
+              child: Center(child: CircularProgressIndicator(color: AppColors.blue, strokeWidth: 2.6)),
             )
           else if (_repo.status == CallLogStatus.permissionDenied ||
               _repo.status == CallLogStatus.unsupported ||
@@ -95,99 +99,33 @@ class CallsScreenState extends State<CallsScreen> {
           else if (matches.isEmpty)
             EmptyStateNote(
               icon: allCalls.isEmpty ? Icons.history_rounded : Icons.filter_alt_off_rounded,
+              title: allCalls.isEmpty ? 'No calls yet' : 'Nothing matches',
               message: allCalls.isEmpty
-                  ? 'No calls logged yet — make or receive a call and it will show up here.'
-                  : 'No calls match this filter.',
+                  ? 'Make or receive a call and it will show up here automatically.'
+                  : 'No calls match this filter or search.',
             )
           else
             for (final day in grouped.keys) ...[
               Padding(
-                padding: const EdgeInsets.only(bottom: 8, top: 4),
-                child: Text(day.toUpperCase(), style: AppText.sectionLabel),
+                padding: const EdgeInsets.only(bottom: 9, top: 2),
+                child: Row(
+                  children: [
+                    Text(day.toUpperCase(), style: AppText.sectionLabel),
+                    const SizedBox(width: 8),
+                    Expanded(child: Container(height: 1, color: AppColors.line)),
+                    const SizedBox(width: 8),
+                    Text('${grouped[day]!.length}', style: AppText.tiny),
+                  ],
+                ),
               ),
               ...grouped[day]!.map(
                 (call) => Padding(
                   padding: const EdgeInsets.only(bottom: 10),
-                  child: _CallRow(call: call),
+                  child: CallListTile(call: call),
                 ),
               ),
-              const SizedBox(height: 6),
+              const SizedBox(height: 8),
             ],
-        ],
-      ),
-    );
-  }
-}
-
-class _CallRow extends StatelessWidget {
-  const _CallRow({required this.call});
-
-  final CallEntry call;
-
-  String _typeWord(String type) => '${type[0].toUpperCase()}${type.substring(1)}';
-
-  @override
-  Widget build(BuildContext context) {
-    return NeuCard(
-      onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => CallDetailScreen(call: call))),
-      child: Row(
-        children: [
-          Avatar(initials: call.initials),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(call.name, style: AppText.cardTitle, overflow: TextOverflow.ellipsis),
-                const SizedBox(height: 2),
-                Row(
-                  children: [
-                    Icon(callTypeIcon(call.type), size: 12, color: callTypeColor(call.type)),
-                    const SizedBox(width: 5),
-                    Text(
-                      // The name already shows the number when there's no contact; avoid repeating it.
-                      call.number == call.name ? _typeWord(call.type) : call.number,
-                      style: AppText.mono(12, color: AppColors.inkSoft),
-                    ),
-                  ],
-                ),
-                if (RecordingRepository.instance.recordingFor(call) != null || NotesRepository.instance.hasNote(call.timestamp)) ...[
-                  const SizedBox(height: 3),
-                  Row(
-                    children: [
-                      if (RecordingRepository.instance.recordingFor(call) != null) ...[
-                        const Icon(Icons.mic_rounded, size: 10, color: AppColors.blueInk),
-                        const SizedBox(width: 3),
-                        const Text('Recorded', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: AppColors.blueInk)),
-                      ],
-                      if (RecordingRepository.instance.recordingFor(call) != null && NotesRepository.instance.hasNote(call.timestamp))
-                        const SizedBox(width: 10),
-                      if (NotesRepository.instance.hasNote(call.timestamp)) ...[
-                        const Icon(Icons.sticky_note_2_rounded, size: 10, color: AppColors.violetInk),
-                        const SizedBox(width: 3),
-                        const Text('Note', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: AppColors.violetInk)),
-                      ],
-                    ],
-                  ),
-                ],
-              ],
-            ),
-          ),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              Text(call.time, style: AppText.mono(12, weight: FontWeight.w600)),
-              const SizedBox(height: 2),
-              Text(call.duration, style: AppText.mono(11, color: AppColors.inkFaint)),
-              if (NotesRepository.instance.hasStatus(call.timestamp)) ...[
-                const SizedBox(height: 6),
-                StatusPill(
-                  label: leadStatusLabel(NotesRepository.instance.statusFor(call.timestamp)),
-                  color: leadStatusColor(NotesRepository.instance.statusFor(call.timestamp)),
-                ),
-              ],
-            ],
-          ),
         ],
       ),
     );

@@ -34,11 +34,11 @@ class _AppShellState extends State<AppShell> {
   ];
 
   static const _items = [
-    (icon: Icons.home_rounded, label: 'Home'),
-    (icon: Icons.call_rounded, label: 'Calls'),
-    (icon: Icons.flag_rounded, label: 'Leads'),
-    (icon: Icons.folder_rounded, label: 'Recordings'),
-    (icon: Icons.settings_rounded, label: 'Profile'),
+    (icon: Icons.space_dashboard_outlined, activeIcon: Icons.space_dashboard_rounded, label: 'Home'),
+    (icon: Icons.call_outlined, activeIcon: Icons.call_rounded, label: 'Calls'),
+    (icon: Icons.flag_outlined, activeIcon: Icons.flag_rounded, label: 'Leads'),
+    (icon: Icons.graphic_eq_outlined, activeIcon: Icons.graphic_eq_rounded, label: 'Audio'),
+    (icon: Icons.person_outline_rounded, activeIcon: Icons.person_rounded, label: 'Profile'),
   ];
 
   void goToTab(int index) => setState(() => _index = index);
@@ -54,45 +54,87 @@ class _AppShellState extends State<AppShell> {
       goToTab: goToTab,
       goToCallsFiltered: goToCallsFiltered,
       child: Scaffold(
-        backgroundColor: AppColors.bg,
+        backgroundColor: AppColors.canvas,
         body: SafeArea(bottom: false, child: IndexedStack(index: _index, children: _screens)),
-        bottomNavigationBar: SafeArea(
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 6),
-            decoration: const BoxDecoration(
-              color: AppColors.bg,
-              border: Border(top: BorderSide(color: AppColors.line)),
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
-              children: List.generate(_items.length, (i) {
-                final active = i == _index;
-                final item = _items[i];
-                return GestureDetector(
-                  onTap: () => goToTab(i),
-                  behavior: HitTestBehavior.opaque,
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(item.icon, size: 20, color: active ? AppColors.blueInk : AppColors.inkFaint),
-                        const SizedBox(height: 3),
-                        Text(
-                          item.label,
-                          style: TextStyle(
-                            fontSize: 10,
-                            fontWeight: FontWeight.w600,
-                            color: active ? AppColors.blueInk : AppColors.inkFaint,
-                          ),
-                        ),
-                      ],
+        bottomNavigationBar: Container(
+          decoration: const BoxDecoration(
+            color: AppColors.surface,
+            border: Border(top: BorderSide(color: AppColors.line)),
+            boxShadow: AppShadows.nav,
+          ),
+          child: SafeArea(
+            top: false,
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(6, 8, 6, 8),
+              child: Row(
+                children: List.generate(_items.length, (i) {
+                  final item = _items[i];
+                  return Expanded(
+                    child: _NavItem(
+                      icon: item.icon,
+                      activeIcon: item.activeIcon,
+                      label: item.label,
+                      active: i == _index,
+                      onTap: () => goToTab(i),
                     ),
-                  ),
-                );
-              }),
+                  );
+                }),
+              ),
             ),
           ),
+        ),
+      ),
+    );
+  }
+}
+
+class _NavItem extends StatelessWidget {
+  const _NavItem({
+    required this.icon,
+    required this.activeIcon,
+    required this.label,
+    required this.active,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final IconData activeIcon;
+  final String label;
+  final bool active;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final color = active ? AppColors.blue : AppColors.inkFaint;
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(14),
+      splashColor: AppColors.blueSoft,
+      highlightColor: AppColors.blueSoft,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 4),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            AnimatedContainer(
+              duration: const Duration(milliseconds: 160),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 5),
+              decoration: BoxDecoration(
+                color: active ? AppColors.blueSoft : Colors.transparent,
+                borderRadius: BorderRadius.circular(kRadiusPill),
+              ),
+              child: Icon(active ? activeIcon : icon, size: 21, color: color),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 10.5,
+                fontWeight: active ? FontWeight.w700 : FontWeight.w500,
+                color: color,
+              ),
+            ),
+          ],
         ),
       ),
     );

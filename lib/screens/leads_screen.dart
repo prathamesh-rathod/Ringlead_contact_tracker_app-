@@ -55,53 +55,43 @@ class _LeadsScreenState extends State<LeadsScreen> {
 
     return RefreshIndicator(
       onRefresh: () => _notes.load(force: true),
+      color: AppColors.blue,
+      backgroundColor: AppColors.surface,
       child: ListView(
-        padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
+        padding: const EdgeInsets.fromLTRB(kGutter, 14, kGutter, 28),
         children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              const Text('Leads', style: AppText.screenTitle),
-              Text('${leads.length} tagged', style: AppText.tiny),
-            ],
+          ScreenHeader(
+            title: 'Leads',
+            subtitle: leads.isEmpty ? 'Tagged calls you need to follow up' : '${leads.length} tagged follow-ups',
           ),
-          const SizedBox(height: 14),
+          const SizedBox(height: 16),
           SizedBox(
             height: 38,
             child: ListView.separated(
               scrollDirection: Axis.horizontal,
+              padding: EdgeInsets.zero,
               itemCount: _filters.length,
               separatorBuilder: (_, _) => const SizedBox(width: 8),
               itemBuilder: (context, i) {
                 final f = _filters[i];
-                final active = f == _filter;
-                final label = f == null ? 'All' : leadStatusLabel(f);
-                final color = f == null ? AppColors.blue : leadStatusColor(f);
-                return GestureDetector(
+                final count = f == null ? leads.length : leads.where((c) => _notes.statusFor(c.timestamp) == f).length;
+                return FilterChipButton(
+                  label: f == null ? 'All  $count' : '${leadStatusLabel(f)}  $count',
+                  active: f == _filter,
+                  color: f == null ? AppColors.blue : leadStatusColor(f),
                   onTap: () => setState(() => _filter = f),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    alignment: Alignment.center,
-                    decoration: active
-                        ? BoxDecoration(color: color, borderRadius: BorderRadius.circular(kRadiusPill))
-                        : neuRaisedSm(radius: kRadiusPill),
-                    child: Text(
-                      label,
-                      style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w700, color: active ? Colors.white : AppColors.inkSoft),
-                    ),
-                  ),
                 );
               },
             ),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 18),
           if (shown.isEmpty)
             EmptyStateNote(
               icon: Icons.flag_outlined,
+              title: leads.isEmpty ? 'No leads yet' : 'Nothing with this status',
               message: leads.isEmpty
-                  ? 'No leads yet.\nOpen a call and set its status (Interested, Follow-up…) to track it here.'
-                  : 'No leads with this status.',
+                  ? 'Open a call and set its status (Interested, Follow-up and so on) to track it here.'
+                  : 'Try another status filter.',
             )
           else
             ...shown.map((c) => Padding(padding: const EdgeInsets.only(bottom: 10), child: _LeadRow(call: c))),
@@ -121,8 +111,10 @@ class _LeadRow extends StatelessWidget {
     final status = NotesRepository.instance.statusFor(call.timestamp);
     final note = NotesRepository.instance.noteFor(call.timestamp);
     final reminder = ReminderService.instance.reminderFor(call.timestamp);
+    final statusColor = leadStatusColor(status);
 
     return NeuCard(
+      padding: const EdgeInsets.all(14),
       onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => CallDetailScreen(call: call))),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -130,31 +122,42 @@ class _LeadRow extends StatelessWidget {
           Row(
             children: [
               Avatar(initials: call.initials),
-              const SizedBox(width: 12),
+              const SizedBox(width: 13),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(call.name, style: AppText.cardTitle, overflow: TextOverflow.ellipsis),
-                    const SizedBox(height: 2),
-                    Text('${call.day} · ${call.time}', style: AppText.mono(12, color: AppColors.inkSoft)),
+                    Text(call.name, style: AppText.cardTitle, maxLines: 1, overflow: TextOverflow.ellipsis),
+                    const SizedBox(height: 3),
+                    Text('${call.day}  ·  ${call.time}', style: AppText.mono(12.5, color: AppColors.inkSoft)),
                   ],
                 ),
               ),
-              StatusPill(label: leadStatusLabel(status), color: leadStatusColor(status)),
+              StatusPill(label: leadStatusLabel(status), color: statusColor),
             ],
           ),
-          if (note != null) ...[
-            const SizedBox(height: 10),
-            Text(note, maxLines: 2, overflow: TextOverflow.ellipsis, style: AppText.body),
+          if (note != null && note.isNotEmpty) ...[
+            const SizedBox(height: 12),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(11),
+              decoration: BoxDecoration(
+                color: AppColors.surfaceSoft,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Text(note, maxLines: 2, overflow: TextOverflow.ellipsis, style: AppText.body),
+            ),
           ],
           if (reminder != null) ...[
-            const SizedBox(height: 8),
+            const SizedBox(height: 10),
             Row(
               children: [
-                const Icon(Icons.alarm_rounded, size: 13, color: AppColors.amberInk),
-                const SizedBox(width: 5),
-                Text(reminderLabel(reminder), style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.w700, color: AppColors.amberInk)),
+                const Icon(Icons.alarm_rounded, size: 14, color: AppColors.amberInk),
+                const SizedBox(width: 6),
+                Text(
+                  'Call back ${reminderLabel(reminder)}',
+                  style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.amberInk),
+                ),
               ],
             ),
           ],

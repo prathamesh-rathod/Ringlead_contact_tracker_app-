@@ -50,59 +50,49 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.bg,
+      backgroundColor: AppColors.canvas,
       body: SafeArea(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.fromLTRB(24, 40, 24, 24),
+          padding: const EdgeInsets.fromLTRB(22, 36, 22, 24),
           child: Column(
             children: [
-              Container(
-                width: 68,
-                height: 68,
-                alignment: Alignment.center,
-                decoration: neuRaised(radius: 22),
-                child: const Icon(Icons.call_rounded, size: 30, color: AppColors.blueInk),
-              ),
-              const SizedBox(height: 14),
+              const BrandMark(),
+              const SizedBox(height: 18),
               const Text(
-                'Ringlead',
-                style: TextStyle(fontSize: 26, fontWeight: FontWeight.w800, color: AppColors.ink, letterSpacing: -0.3),
+                'Welcome back',
+                style: TextStyle(fontSize: 26, fontWeight: FontWeight.w700, color: AppColors.ink, letterSpacing: -0.6),
               ),
               const SizedBox(height: 6),
               const Text(
-                'Manage every call and lead in one place.',
+                'Sign in to track every call and lead.',
                 textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 13.5, color: AppColors.inkSoft),
+                style: AppText.caption,
               ),
-              const SizedBox(height: 32),
+              const SizedBox(height: 28),
               NeuCard(
+                padding: const EdgeInsets.all(18),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    const Text('EMAIL', style: AppText.sectionLabel),
-                    const SizedBox(height: 10),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 14),
-                      decoration: neuPressed(),
+                    LabeledField(
+                      label: 'Email',
                       child: TextField(
                         controller: _emailController,
                         keyboardType: TextInputType.emailAddress,
+                        autocorrect: false,
                         onChanged: (_) => setState(() {}),
-                        style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: AppColors.ink),
+                        style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w500, color: AppColors.ink),
                         decoration: const InputDecoration(
                           border: InputBorder.none,
                           isCollapsed: true,
                           hintText: 'you@business.com',
-                          hintStyle: TextStyle(color: AppColors.inkFaint, fontWeight: FontWeight.w500),
+                          hintStyle: TextStyle(color: AppColors.inkFaint, fontWeight: FontWeight.w400),
                         ),
                       ),
                     ),
-                    const SizedBox(height: 16),
-                    const Text('PASSWORD', style: AppText.sectionLabel),
-                    const SizedBox(height: 10),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 14),
-                      decoration: neuPressed(),
+                    const SizedBox(height: 14),
+                    LabeledField(
+                      label: 'Password',
                       child: Row(
                         children: [
                           Expanded(
@@ -113,12 +103,12 @@ class _LoginScreenState extends State<LoginScreen> {
                               onSubmitted: (_) {
                                 if (_formValid) _login();
                               },
-                              style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: AppColors.ink),
+                              style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w500, color: AppColors.ink),
                               decoration: const InputDecoration(
                                 border: InputBorder.none,
                                 isCollapsed: true,
                                 hintText: 'Enter your password',
-                                hintStyle: TextStyle(color: AppColors.inkFaint, fontWeight: FontWeight.w500),
+                                hintStyle: TextStyle(color: AppColors.inkFaint, fontWeight: FontWeight.w400),
                               ),
                             ),
                           ),
@@ -126,7 +116,7 @@ class _LoginScreenState extends State<LoginScreen> {
                             onTap: () => setState(() => _obscurePassword = !_obscurePassword),
                             child: Icon(
                               _obscurePassword ? Icons.visibility_off_rounded : Icons.visibility_rounded,
-                              size: 18,
+                              size: 19,
                               color: AppColors.inkFaint,
                             ),
                           ),
@@ -135,38 +125,103 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                     if (_error != null) ...[
                       const SizedBox(height: 14),
-                      Text(_error!, textAlign: TextAlign.center, style: const TextStyle(fontSize: 12.5, color: AppColors.redInk)),
+                      FormErrorNote(message: _error!),
                     ],
-                    const SizedBox(height: 16),
+                    const SizedBox(height: 20),
                     _submitting
                         ? const Padding(
                             padding: EdgeInsets.symmetric(vertical: 15),
                             child: Center(child: CircularProgressIndicator(color: AppColors.blue, strokeWidth: 2.4)),
                           )
-                        : NeuPrimaryButton(label: 'Sign In', onPressed: _formValid ? _login : null),
-                    const SizedBox(height: 14),
-                    GestureDetector(
-                      onTap: _submitting ? null : () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const RegisterScreen())),
-                      child: const Text.rich(
-                        TextSpan(
-                          text: "Don't have an account? ",
-                          style: AppText.caption,
-                          children: [TextSpan(text: 'Create one', style: TextStyle(color: AppColors.blueInk, fontWeight: FontWeight.w700))],
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 10),
-                    const Text(
-                      "By continuing, you agree to Ringlead's Terms and Privacy Policy.",
-                      textAlign: TextAlign.center,
-                      style: AppText.tiny,
-                    ),
+                        : NeuPrimaryButton(label: 'Sign in', onPressed: _formValid ? _login : null),
                   ],
                 ),
+              ),
+              const SizedBox(height: 20),
+              GestureDetector(
+                onTap: _submitting
+                    ? null
+                    : () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const RegisterScreen())),
+                child: const Text.rich(
+                  TextSpan(
+                    text: 'New to Ringlead?  ',
+                    style: AppText.caption,
+                    children: [TextSpan(text: 'Create an account', style: AppText.link)],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 14),
+              const Text(
+                'By continuing you agree to the Terms and Privacy Policy.',
+                textAlign: TextAlign.center,
+                style: AppText.tiny,
               ),
             ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+/// Square brand tile used on the auth screens and the splash.
+class BrandMark extends StatelessWidget {
+  const BrandMark({super.key, this.size = 62});
+
+  final double size;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        Container(
+          width: size,
+          height: size,
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(size * 0.32),
+            gradient: const LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [Color(0xFF2F6BFF), Color(0xFF1B3FB8)],
+            ),
+            boxShadow: AppShadows.tinted(AppColors.blue),
+          ),
+          child: Icon(Icons.graphic_eq_rounded, size: size * 0.46, color: Colors.white),
+        ),
+        const SizedBox(height: 12),
+        const Text(
+          'Ringlead',
+          style: TextStyle(fontSize: 17, fontWeight: FontWeight.w700, color: AppColors.ink, letterSpacing: 0.2),
+        ),
+      ],
+    );
+  }
+}
+
+/// Inline validation / server error message inside a form card.
+class FormErrorNote extends StatelessWidget {
+  const FormErrorNote({super.key, required this.message});
+
+  final String message;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(11),
+      decoration: BoxDecoration(color: AppColors.redSoft, borderRadius: BorderRadius.circular(12)),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Icon(Icons.error_outline_rounded, size: 16, color: AppColors.redInk),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              message,
+              style: const TextStyle(fontSize: 12.5, height: 1.4, fontWeight: FontWeight.w500, color: AppColors.redInk),
+            ),
+          ),
+        ],
       ),
     );
   }
